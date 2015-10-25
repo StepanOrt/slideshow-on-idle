@@ -1,0 +1,91 @@
+#/bin/bash
+
+usage()
+{
+cat << EOF
+usage: 
+
+   $0 [-v] <idle time seconds> <slideshow delay seconds> [files/directories/URLs ...]
+
+EOF
+}
+
+MISSING=
+command -v xprintidle >/dev/null 2>&1 || { MISSING="$MISSING xprintidle"; }
+command -v feh >/dev/null 2>&1 || { MISSING="$MISSING feh"; }
+command -v kill >/dev/null 2>&1 || { MISSING="$MISSING kill"; }
+command -v sleep >/dev/null 2>&1 || { MISSING="$MISSING sleep"; }
+if ! [[ -z $MISSING ]]
+then
+   echo "Require these applications:$MISSING"
+   exit 1
+fi
+
+VERBOSE=0
+while getopts “ht:vt:-helpt” OPTION
+do
+     case $OPTION in
+         h)
+             usage
+             exit 1
+             ;;
+         -help)
+             usage
+             exit 1
+             ;;
+         v)
+             VERBOSE=1
+             ;;
+     esac
+done
+
+if [ $VERBOSE -eq 1 ]
+then
+   shift
+fi
+
+IDLE_TIME=$1
+shift
+SLIDESHOW_DELAY=$1
+shift
+
+if [[ -z $IDLE_TIME ]] || [[ -z $SLIDESHOW_DELAY ]]
+then
+     usage
+     exit 1
+fi
+
+if [ $VERBOSE -eq 1 ]
+then
+   echo Will start picture presentation after $IDLE_TIME seconds and will randomly change picture every $SLIDESHOW_DELAY seconds.
+fi
+
+IDLE_TIME=$(($IDLE_TIME*1000))
+
+PREVIOUS_IDLE=0
+PID=0
+while true
+do
+   sleep 1
+   IDLE=$(xprintidle)
+   if [ $IDLE -gt $IDLE_TIME ] && ! [ $PID -gt 0 ]
+   then
+      if [ $VERBOSE -eq 1 ]
+      then
+         echo "Starting presentation."
+      fi
+      feh --fullscreen --preload --hide-pointer --quiet --randomize --recursive --zoom fill --slideshow-delay $SLIDESHOW_DELAY $@ &
+      PID=$!
+   fi
+   if [ $PREVIOUS_IDLE -gt $IDLE ] && [ $PID -gt 0 ]
+   then
+     if [ $VERBOSE -eq 1 ]
+     then
+        echo Idle ended.
+     fi
+     kill $PID
+     PID=0
+   fi
+   PREVIOUS_IDLE=$IDLE
+done
+
