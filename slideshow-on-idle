@@ -15,7 +15,7 @@ command -v xprintidle >/dev/null 2>&1 || { MISSING="$MISSING xprintidle"; }
 command -v feh >/dev/null 2>&1 || { MISSING="$MISSING feh"; }
 command -v kill >/dev/null 2>&1 || { MISSING="$MISSING kill"; }
 command -v sleep >/dev/null 2>&1 || { MISSING="$MISSING sleep"; }
-if ! [[ -z $MISSING ]]
+if [ ! -z "$MISSING" ]
 then
    echo "Require these applications:$MISSING"
    exit 1
@@ -49,7 +49,7 @@ shift
 SLIDESHOW_DELAY=$1
 shift
 
-if [[ -z $IDLE_TIME ]] || [[ -z $SLIDESHOW_DELAY ]]
+if [ -z "$IDLE_TIME" ] || [ -z "$SLIDESHOW_DELAY" ]
 then
      usage
      exit 1
